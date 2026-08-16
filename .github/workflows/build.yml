@@ -1,0 +1,61 @@
+name: Benim Yapay Zekam APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: GitHub dosyalarını indir
+        uses: actions/checkout@v4
+
+      - name: Java 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle kur
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Android projesini ZIP'ten çıkar
+        run: |
+          mkdir project
+          unzip -q *.zip -d project
+
+      - name: Gradle ayarını oluştur
+        run: |
+          cat > project/settings.gradle.kts <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+
+          rootProject.name = "BenimYapayZekam"
+          EOF
+
+      - name: Android APK oluştur
+        run: |
+          cd project
+          gradle assembleDebug --no-daemon
+
+      - name: APK'yı hazırla
+        uses: actions/upload-artifact@v4
+        with:
+          name: BenimYapayZekam-APK
+          path: project/build/outputs/apk/debug/*.apk
